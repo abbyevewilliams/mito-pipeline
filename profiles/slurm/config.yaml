@@ -1,0 +1,28 @@
+executor: slurm
+jobs: 50
+latency-wait: 60
+retries: 1
+
+default-resources:
+    slurm_partition: "short"
+    slurm_account:   "biol-silvereye"
+    runtime: 15
+
+set-threads:
+    bwa_map: 8
+    mapdamage2: 8
+
+set-resources:
+    bwa_map:
+        slurm_partition: "long"
+        slurm_account: "biol-silvereye"
+        mem_mb: 32000
+        runtime: 1440
+    dedup:
+        slurm_account: "biol-silvereye"
+        mem_mb: 100000
+    mapdamage2:
+        slurm_partition: "long"
+        slurm_account: "biol-silvereye"
+        mem_mb: 64000
+        runtime: 1440

@@ -1,0 +1,5 @@
+samples: "/data/biol-silvereye/ball6625/dodo/samples.yaml"
+mapdamage_rescale: True
+reference_genomes:
+  dodo_mito: "/data/biol-silvereye/ball6625/ref-genome/dodo/dodo_KX902236.1.fasta"
+  solitaire_mito: "/data/biol-silvereye/ball6625/ref-genome/solitaire/solitaire_KX902238.1.fasta"

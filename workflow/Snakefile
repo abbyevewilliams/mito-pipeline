@@ -1,18 +1,60 @@
-# Main entrypoint of the workflow.
-# Please follow the best practices:
-# https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there.
+
+# import packages
+# -----------------------------------------------------
+import os
+import yaml
 
 
 # load configuration
 # -----------------------------------------------------
-configfile: "config/config.yml"
+configfile: "config/config.yaml"
 
+
+# load samples
+# -----------------------------------------------------
+with open(config["samples"]) as f:
+    samples = yaml.safe_load(f)["samples"]
+SAMPLES = list(samples.keys())
+
+# Read in mapdamage preferences
+MAPDAMAGE_RESCALE=config["mapdamage_rescale"]
+
+# Function for extracting names of all fastq files
+
+def get_fastq_files():
+    all_reads = []
+    for sample, paths in samples.items():
+        # Paired reads (add _R1 and _R2)
+        for paired_base in paths.get("paired_reads", []):
+            all_reads.append(f"{paired_base}_R1.fastq.gz")
+            all_reads.append(f"{paired_base}_R2.fastq.gz")
+        # Unpaired reads (keep as is)
+        for unpaired in paths.get("unpaired_reads", []):
+            all_reads.append(unpaired)
+    return all_reads
+
+ALL_FASTQ_FILES = get_fastq_files()
+
+# Function for extracting names of all pairs per sample
+
+PAIRED_PAIRS = [
+    (sample, basename)
+    for sample, data in samples.items()
+    for basename in data.get("paired_reads", [])
+]
+
+# Function for extracting the species
+def get_species(sample):
+    return samples[sample]["species"]
 
 # load rules
 # -----------------------------------------------------
 include: "rules/common.smk"
-include: "rules/process_reads.smk"
+include: "rules/01_trim.smk"
+include: "rules/02_map.smk"
+include: "rules/03_dedup.smk"
+include: "rules/04_damage.smk"
+include: "rules/05_consensus.smk"
 
 
 # optional messages, log and error handling
@@ -31,7 +73,42 @@ onerror:
 
 # target rules
 # -----------------------------------------------------
+
 rule all:
     input:
-        "results/multiqc/multiqc_report.html",
-    default_target: True
+        
+        # initial fastqc
+        expand("results/01_qc/fastqc_initial/{sample_path}.html", sample_path=ALL_FASTQ_FILES),
+
+        # remove adapters from pe and se and trim
+        expand("results/02_trimmed/se/{sample}.fastq.gz", sample=SAMPLES), 
+        expand("results/02_trimmed/pe/{sample}_{basename}_collapsed.fastq.gz", zip, sample=[s for s, b in PAIRED_PAIRS], basename=[b for s, b in PAIRED_PAIRS]),
+        
+        # post trimming fastqc
+        expand("results/01_qc/fastqc_post_trim/se/{sample}_none.html", sample=SAMPLES),
+        expand("results/01_qc/fastqc_post_trim/pe/{sample}_{collapsed_type}.html", sample=SAMPLES, collapsed_type=["collapsed", "collapsed_trunc"]),
+
+        # combined reads (se + pe)
+        expand("results/03_combined/{sample}.fastq.gz",sample=SAMPLES),
+        
+        # indexed ref genomes
+        expand("results/logs/bwa_index/{species}.log", species=config["reference_genomes"].keys()),
+
+        # mapped reads
+        expand("results/05_filt/{sample}.bam.bai", sample=SAMPLES),     
+        
+        # dedupped bams
+        expand("results/06_dedup/{sample}.sorted.bam.bai", sample=SAMPLES), 
+
+        # mapdamage rescale
+        expand("results/07_mapdamage/{sample}/{sample}.rescaled.bam", sample=SAMPLES) if MAPDAMAGE_RESCALE else [],
+        expand("results/07_mapdamage/{sample}/{sample}.rescaled.bam.bai", sample=SAMPLES) if MAPDAMAGE_RESCALE else [],
+
+        # stats
+        expand("results/08_stats/{sample}.stats", sample=SAMPLES),                
+        expand("results/08_stats/{sample}.depth", sample=SAMPLES),                 
+        "results/08_stats/mapping_summary.txt",                                          
+        "results/08_stats/avg_depth.txt",                                                
+
+localrules:
+    all
