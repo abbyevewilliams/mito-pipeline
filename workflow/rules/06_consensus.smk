@@ -3,18 +3,18 @@
 
 rule angsd_consensus:
     input:
-        bam="results/mapdamage/{sample}.bam",
-        ref="reference/mito.fasta"
+        bam="results/07_mapdamage/{sample}.bam",
+        ref=lambda wildcards: config["reference_genomes"][samples[wildcards.sample]["species"]]
     output:
-        fasta="consensus/{sample}.fa"
+        fasta="results/09_consensus/{sample}.fa"
     params:
         minmapq=25,
         minbaseq=20,
         mindepth=3
     log:
-        "logs/angsd/{sample}.log"
+        "results/logs/angsd/{sample}.log"
     container:
-		angsd_container
+        "docker://quay.io/biocontainers/angsd:0.940--hf5e1c6e_3"
     shell:
         """
         angsd -i {input.bam} \
@@ -23,7 +23,6 @@ rule angsd_consensus:
               -setMinDepth {params.mindepth} \
               -minMapQ {params.minmapq} \
               -minQ {params.minbaseq} \
-              -r MT \
               -out consensus/{wildcards.sample} \
               -ref {input.ref} \
               > {log} 2>&1

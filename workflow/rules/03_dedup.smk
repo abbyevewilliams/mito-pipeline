@@ -1,23 +1,23 @@
 # Deduplicate using DeDup
 
 rule dedup:
-        input:
-            "results/05_filt/{sample}.bam"
-        output:
-            bam=temp("results/06_dedup/{sample}.bam")
-        conda: 
-            "../../envs/dedup.yaml"
-        log:
-            "results/logs/dedup/{sample}.log"
-        shell:
-            """
-            export _JAVA_OPTIONS="-Xmx90G"
-            bam={output.bam}
-            mkdir -p $(dirname $bam)
-            dedup -i {input.bam} -m -o $(dirname $bam);
-            mv ${{bam%%.bam}}_rmdup.bam $bam
+    input:
+        "results/05_filt/{sample}.bam"
+    output:
+        bam=temp("results/06_dedup/{sample}.bam")
+    conda: 
+        "../../envs/dedup.yaml"
+    log:
+        "results/logs/dedup/{sample}.log"
+    shell:
+        """
+        export _JAVA_OPTIONS="-Xmx90G"
+        bam={output.bam}
+        mkdir -p $(dirname $bam)
+        dedup -i {input.bam} -m -o $(dirname $bam);
+        mv ${{bam%%.bam}}_rmdup.bam $bam
 
-            """
+        """
 
 # Sort deduped bam file
 rule samtools_sort_dedup:

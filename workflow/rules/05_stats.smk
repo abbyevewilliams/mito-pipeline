@@ -21,9 +21,6 @@ rule samtools_stats:
         "results/08_stats/{sample}.stats"
     log:
         "results/logs/samtools_stats/{sample}.log"
-    threads: 4
-    resources:
-        mem="32GB"
     wrapper:
         "v5.8.0/bio/samtools/stats"
 
@@ -66,7 +63,6 @@ rule compute_average_depth:
         depth_files=expand("results/08_stats/{sample}.depth", sample=SAMPLES)
     output:
         "results/08_stats/avg_depth.txt"
-    priority: 100
     shell:
         """
         echo -e "Sample\tAverage_Depth" > {output}

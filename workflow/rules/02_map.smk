@@ -1,23 +1,26 @@
 
 # Index reference
 
-rule bwa_index:
+rule bwa_mem2_index:
     input:
-        ref=lambda wildcards: config["reference_genomes"][wildcards.species]
+        lambda wildcards: config["reference_genomes"][wildcards.species],
     output:
-        multiext(lambda wildcards: config["reference_genomes"][wildcards.species],
-                 ".0123", ".amb", ".ann", ".bwt.2bit.64", ".pac")
+        "{species}.0123",
+        "{species}.amb",
+        "{species}.ann",
+        "{species}.bwt.2bit.64",
+        "{species}.pac",
     log:
-        "results/logs/bwa_index/{species}.log"
+        "results/logs/bwa-mem2_index/{species}.log",
     wrapper:
-        "v5.8.2/bio/bwa-mem2/index"
+        "v7.0.0/bio/bwa-mem2/index"
 
 
 # Map all reads to the reference
 
 rule bwa_map:
-        input:
-            reads="results/03_combined/{sample}.fastq.gz"
+    input:
+            reads="results/03_combined/{sample}.fastq.gz",
             idx=lambda wildcards: multiext(
             config["reference_genomes"][samples[wildcards.sample]["species"]],
             ".amb", ".ann", ".bwt.2bit.64", ".pac", ".0123"
@@ -36,7 +39,7 @@ rule filter_mapped:
     input:
         "results/04_mapped/{sample}.sam",
     output:
-        results/05_filt/bam="{sample}.bam",
+        "results/05_filt/{sample}.bam",
     log:
         "results/logs/filter_mapped/{sample}.log",
     params:

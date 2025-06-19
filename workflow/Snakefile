@@ -47,14 +47,18 @@ PAIRED_PAIRS = [
 def get_species(sample):
     return samples[sample]["species"]
 
+# Checks
+print("SAMPLES:", SAMPLES)
+print("PAIRED_PAIRS:", PAIRED_PAIRS)
+
 # load rules
 # -----------------------------------------------------
-include: "rules/common.smk"
 include: "rules/01_trim.smk"
 include: "rules/02_map.smk"
 include: "rules/03_dedup.smk"
 include: "rules/04_damage.smk"
-include: "rules/05_consensus.smk"
+include: "rules/05_stats.smk"
+include: "rules/06_consensus.smk"
 
 
 # optional messages, log and error handling
@@ -76,39 +80,22 @@ onerror:
 
 rule all:
     input:
-        
-        # initial fastqc
         expand("results/01_qc/fastqc_initial/{sample_path}.html", sample_path=ALL_FASTQ_FILES),
-
-        # remove adapters from pe and se and trim
-        expand("results/02_trimmed/se/{sample}.fastq.gz", sample=SAMPLES), 
+        expand("results/02_trimmed/se/{sample}.fastq.gz", sample=SAMPLES), # remove adapters from pe and se and trim
         expand("results/02_trimmed/pe/{sample}_{basename}_collapsed.fastq.gz", zip, sample=[s for s, b in PAIRED_PAIRS], basename=[b for s, b in PAIRED_PAIRS]),
-        
-        # post trimming fastqc
-        expand("results/01_qc/fastqc_post_trim/se/{sample}_none.html", sample=SAMPLES),
+        expand("results/01_qc/fastqc_post_trim/se/{sample}.html", sample=SAMPLES), # post trimming fastqc
         expand("results/01_qc/fastqc_post_trim/pe/{sample}_{collapsed_type}.html", sample=SAMPLES, collapsed_type=["collapsed", "collapsed_trunc"]),
-
-        # combined reads (se + pe)
-        expand("results/03_combined/{sample}.fastq.gz",sample=SAMPLES),
-        
-        # indexed ref genomes
-        expand("results/logs/bwa_index/{species}.log", species=config["reference_genomes"].keys()),
-
-        # mapped reads
-        expand("results/05_filt/{sample}.bam.bai", sample=SAMPLES),     
-        
-        # dedupped bams
-        expand("results/06_dedup/{sample}.sorted.bam.bai", sample=SAMPLES), 
-
-        # mapdamage rescale
-        expand("results/07_mapdamage/{sample}/{sample}.rescaled.bam", sample=SAMPLES) if MAPDAMAGE_RESCALE else [],
+        expand("results/03_combined/{sample}.fastq.gz",sample=SAMPLES), # combined reads (se + pe)
+        expand("results/logs/bwa_index/{species}.log", species=config["reference_genomes"].keys()), # indexed ref genomes
+        expand("results/05_filt/{sample}.bam.bai", sample=SAMPLES), # mapped reads
+        expand("results/06_dedup/{sample}.sorted.bam.bai", sample=SAMPLES), # dedupped bams
+        expand("results/07_mapdamage/{sample}/{sample}.rescaled.bam", sample=SAMPLES) if MAPDAMAGE_RESCALE else [], # mapdamage rescale
         expand("results/07_mapdamage/{sample}/{sample}.rescaled.bam.bai", sample=SAMPLES) if MAPDAMAGE_RESCALE else [],
-
-        # stats
-        expand("results/08_stats/{sample}.stats", sample=SAMPLES),                
-        expand("results/08_stats/{sample}.depth", sample=SAMPLES),                 
-        "results/08_stats/mapping_summary.txt",                                          
-        "results/08_stats/avg_depth.txt",                                                
+        expand("results/08_stats/{sample}.stats", sample=SAMPLES), # stats 
+        expand("results/08_stats/{sample}.depth", sample=SAMPLES),
+        "results/08_stats/mapping_summary.txt",
+        "results/08_stats/avg_depth.txt", 
+        expand("results/09_consensus/{sample}.fa", sample=SAMPLES) # consensus
 
 localrules:
     all

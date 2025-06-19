@@ -2,7 +2,7 @@
 
 rule mapdamage2:
     input:
-        ref=config["reference_genome"],
+        ref=lambda wildcards: config["reference_genomes"][samples[wildcards.sample]["species"]],
         bam="results/06_dedup/{sample}.bam",
     output:
         log="results/07_mapdamage/{sample}/Runtime_log.txt",  # output folder is infered from this file, so it needs to be the same folder for all output files
@@ -29,7 +29,5 @@ rule samtools_index_rescaled:
         "results/07_mapdamage/{sample}/{sample}.rescaled.bam.bai"
     log:
         "results/logs/samtools_index_rescaled/{sample}.log"
-    resources:
-        mem="8GB"
     wrapper:
         "v5.8.0/bio/samtools/index"

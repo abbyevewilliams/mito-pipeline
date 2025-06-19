@@ -1,4 +1,3 @@
-
 # Helper functions
 
 def get_paired_reads(sample):
@@ -11,7 +10,7 @@ def get_unpaired_reads(sample):
 
 rule fastqc_initial:
     input:
-        lambda wildcards: wildcards.sample_path
+        "{sample_path}"
     output:
         html="results/01_qc/fastqc_initial/{sample_path}.html",
         zip="results/01_qc/fastqc_initial/{sample_path}.zip"
@@ -27,11 +26,11 @@ rule adapterremoval_se:
         sample=lambda wildcards: samples[wildcards.sample]["unpaired_reads"]
     output:
         fq="results/02_trimmed/se/{sample}.fastq.gz",                               # trimmed reads
-        discarded="results/02_trimmed/se/{sample}.discarded.fastq.gz",              # reads that did not pass filters
+        discarded="results/02_trimmed/se/{sample}.discarded.fastq.gz"              # reads that did not pass filters
     log:
         "results/logs/adapterremoval/se/{sample}.log"
-	params:
-		extra="--mm 3 --minquality 30 --trimns --minlength 25",			 # same params as NZ greyling paper
+    params:
+        extra="--mm 3 --minquality 30 --trimns --minlength 25"              # same params as NZ greyling paper
     wrapper:
         "v7.0.0/bio/adapterremoval"
 
@@ -39,17 +38,15 @@ rule adapterremoval_se:
 
 rule adapterremoval_pe:
     input:
-        sample=[
-            lambda wc: f"{wc.basename}_R1.fastq.gz", 
-            lambda wc: lambda wc: f"{wc.basename}_R2.fastq.gz"
-                ]
+        sample=[lambda wc: f"{wc.basename}_R1.fastq.gz", 
+                lambda wc: f"{wc.basename}_R2.fastq.gz"]
     output:
         collapsed="results/02_trimmed/pe/{sample}.collapsed.fastq.gz",              # overlapping mate-pairs which have been merged into a single read
-        collapsed_trunc="results/02_trimmed/pe/{sample}.collapsed_trunc.fastq.gz",  # collapsed reads that were quality trimmed
+        collapsed_trunc="results/02_trimmed/pe/{sample}.collapsed_trunc.fastq.gz"  # collapsed reads that were quality trimmed
     log:
         "results/logs/adapterremoval/pe/{sample}.log"
     params:
-		extra="--mm 3 --minquality 30 --trimns --minlength 25 --collapse --collapse-deterministic",			 # same params as NZ greyling paper
+        extra="--mm 3 --minquality 30 --trimns --minlength 25 --collapse --collapse-deterministic" # same params as NZ greyling paper
     wrapper:
         "v7.0.0/bio/adapterremoval"
 
@@ -58,9 +55,9 @@ rule adapterremoval_pe:
 rule fastqc_post_trim:
     input:
         lambda wildcards: (
-            f"results/trimmed/se/{wildcards.sample}.fastq.gz"
+            f"results/02_trimmed/se/{wildcards.sample}.fastq.gz"
             if wildcards.read_type == "se"
-            else f"results/trimmed/pe/{wildcards.sample}.{wildcards.collapsed_type}.fastq.gz"
+            else f"results/02_trimmed/pe/{wildcards.sample}.{wildcards.collapsed_type}.fastq.gz"
         )
     output:
         html="results/01_qc/fastqc_post_trim/{read_type}/{sample}_{collapsed_type}.html",
