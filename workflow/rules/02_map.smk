@@ -1,20 +1,25 @@
 
-# Index reference
+# Index references
 
-rule bwa_mem2_index:
+rule bwa_mem2_index_dodo:
     input:
-        lambda wildcards: config["reference_genomes"][wildcards.species],
+        config["reference_genomes"]["dodo"]
     output:
-        "{species}.0123",
-        "{species}.amb",
-        "{species}.ann",
-        "{species}.bwt.2bit.64",
-        "{species}.pac",
+        multiext(config["reference_genomes"]["dodo"], ".0123", ".amb", ".ann", ".bwt.2bit.64", ".pac")
     log:
-        "results/logs/bwa-mem2_index/{species}.log",
+        "results/logs/bwa_index/dodo.log"
     wrapper:
         "v7.0.0/bio/bwa-mem2/index"
 
+rule bwa_mem2_index_solitaire:
+    input:
+        config["reference_genomes"]["solitaire"]
+    output:
+        multiext(config["reference_genomes"]["solitaire"], ".0123", ".amb", ".ann", ".bwt.2bit.64", ".pac")
+    log:
+        "results/logs/bwa_index/solitaire.log"
+    wrapper:
+        "v7.0.0/bio/bwa-mem2/index"
 
 # Map all reads to the reference
 
@@ -33,11 +38,12 @@ rule bwa_map:
         sort="samtools"
     wrapper:
         "v5.8.0/bio/bwa-mem2/mem"
+
 # Filter reads for quality > 25
 
 rule filter_mapped:
     input:
-        "results/04_mapped/{sample}.sam",
+        "results/04_mapped/{sample}.bam",
     output:
         "results/05_filt/{sample}.bam",
     log:

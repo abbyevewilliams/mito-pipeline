@@ -1,0 +1,118 @@
+samples:
+  OUMNH_19616_Dodo_MareauxSonges_713:
+    species: dodo
+    paired_reads:
+      - SC1091_SS1
+      - 11306-JK-1_001_S1_L005
+      - 11306-JK-1_019_S1_L005
+      - SC1207
+      - SC1207_SS1
+      - 11306-JK-1_014_S1_L005
+      - 11306-JK-1_031_S1_L005
+    unpaired_reads:
+      - SC1091_S34
+
+  OUMNH_19628a_Solitaire_RodriguesIsland_777:
+    species: solitaire
+    paired_reads:
+      - SC1092_SS1
+      - 11306-JK-1_002_S1_L005
+      - 11306-JK-1_020_S1_L005
+      - SC1206
+      - SC1206_SS1
+      - 11306-JK-1_013_S1_L005
+      - 11306-JK-1_030_S1_L005
+    unpaired_reads:
+      - SC1092_S35
+
+  OUMNH_19628b_Solitaire_RodriguesIsland_2937:
+    species: solitaire
+    paired_reads:
+      - SC1093_SS1
+      - 11306-JK-1_003_S1_L005
+      - 11306-JK-1_021_S1_L005
+    unpaired_reads:
+      - SC1093_S36
+
+  OUMNH_19626a_Solitaire_RodriguesIsland_759:
+    species: solitaire
+    paired_reads:
+      - SC1094_SS1
+      - 11306-JK-1_004_S1_L005
+      - 11306-JK-1_022_S1_L005
+      - SC1208
+      - SC1208
+      - 11306-JK-1_015_S1_L005
+      - 11306-JK-1_032_S1_L005
+    unpaired_reads:
+      - SC1094_S37
+
+  OUMNH_19622_Solitaire_RodriguesIsland_468:
+    species: solitaire
+    paired_reads:
+      - SC1095_SS1
+      - 11306-JK-1_005_S1_L005
+      - 11306-JK-1_023_S1_L005
+      - SC1209
+      - SC1209_SS1
+      - 11306-JK-1_016_S1_L005
+      - 11306-JK-1_033_S1_L005
+    unpaired_reads:
+      - SC1095_S38
+
+  OUMNH_19626b_Solitaire_RodriguesIsland:
+    species: solitaire
+    paired_reads:
+      - SC1096_SS1
+      - 11306-JK-1_006_S1_L005
+      - 11306-JK-1_024_S1_L005
+    unpaired_reads:
+      - SC1096_S39
+
+  OUMNH_19617a_Dodo_MareauxSonges_459:
+    species: dodo
+    paired_reads:
+      - SC1097_SS1
+      - 11306-JK-1_007_S1_L005
+      - 11306-JK-1_025_S1_L005
+      - SC1210
+      - SC1210_SS1
+      - 11306-JK-1_017_S1_L005
+      - 11306-JK-1_034_S1_L005
+    unpaired_reads:
+      - SC1097_S40
+
+  OUMNH_19617b_Dodo_MareauxSonges_2223:
+    species: dodo
+    paired_reads:
+      - SC1098_SS1
+      - 11306-JK-1_008_S1_L005
+      - 11306-JK-1_026_S1_L005
+      - SC1211
+      - 11306-JK-1_018_S1_L005
+    unpaired_reads:
+      - SC1098_S41
+
+  OUMNH_19615_Dodo_387:
+    species: dodo
+    paired_reads:
+      - SC1099_SS1
+      - 11306-JK-1_009_S1_L005
+      - 11306-JK-1_027_S1_L005
+      - SC1204
+      - 11306-JK-1_011_S1_L005
+    unpaired_reads:
+      - SC1099_S42
+
+  OUMNH_19617c_Dodo_MareauxSonges_2064:
+    species: dodo
+    paired_reads:
+      - SC1100_SS1
+      - 11306-JK-1_010_S1_L005
+      - 11306-JK-1_028_S1_L005
+      - SC1205
+      - SC1205_SS1
+      - 11306-JK-1_012_S1_L005
+      - 11306-JK-1_029_S1_L005
+    unpaired_reads:
+      - SC1100_S43

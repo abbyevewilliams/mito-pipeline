@@ -1,21 +1,13 @@
-# Helper functions
-
-def get_paired_reads(sample):
-    return samples[sample].get("paired_reads", [])
-
-def get_unpaired_reads(sample):
-    return samples[sample].get("unpaired_reads", [])
-
 # Run pre-trimming FastQC
 
 rule fastqc_initial:
     input:
-        "{sample_path}"
+        "{sample_file}"
     output:
-        html="results/01_qc/fastqc_initial/{sample_path}.html",
-        zip="results/01_qc/fastqc_initial/{sample_path}.zip"
+        html="results/01_qc/fastqc_initial/{sample_file}.html",
+        zip="results/01_qc/fastqc_initial/{sample_file}.zip"
     log:
-        "results/logs/fastqc_initial/{sample_path}.log",
+        "results/logs/fastqc_initial/{sample_file}.log",
     wrapper:
         "v7.0.0/bio/fastqc"
 
@@ -23,12 +15,12 @@ rule fastqc_initial:
 
 rule adapterremoval_se:
     input:
-        sample=lambda wildcards: samples[wildcards.sample]["unpaired_reads"]
+        sample=lambda wc: f"Data/{wc.file}_R1.fastq.gz"
     output:
-        fq="results/02_trimmed/se/{sample}.fastq.gz",                               # trimmed reads
-        discarded="results/02_trimmed/se/{sample}.discarded.fastq.gz"              # reads that did not pass filters
+        fq="results/02_trimmed/se/{sample}--{file}.fastq.gz",                               # trimmed reads
+        discarded="results/02_trimmed/se/{sample}--{file}.discarded.fastq.gz"              # reads that did not pass filters
     log:
-        "results/logs/adapterremoval/se/{sample}.log"
+        "results/logs/adapterremoval/se/{sample}--{file}.log"
     params:
         extra="--mm 3 --minquality 30 --trimns --minlength 25"              # same params as NZ greyling paper
     wrapper:
@@ -38,13 +30,12 @@ rule adapterremoval_se:
 
 rule adapterremoval_pe:
     input:
-        sample=[lambda wc: f"{wc.basename}_R1.fastq.gz", 
-                lambda wc: f"{wc.basename}_R2.fastq.gz"]
+        sample=lambda wc: [f"Data/{wc.file}_R1.fastq.gz", f"Data/{wc.file}_R2.fastq.gz"]
     output:
-        collapsed="results/02_trimmed/pe/{sample}.collapsed.fastq.gz",              # overlapping mate-pairs which have been merged into a single read
-        collapsed_trunc="results/02_trimmed/pe/{sample}.collapsed_trunc.fastq.gz"  # collapsed reads that were quality trimmed
+        collapsed="results/02_trimmed/pe/{sample}--{file}.collapsed.fastq.gz",              # overlapping mate-pairs which have been merged into a single read
+        collapsed_trunc="results/02_trimmed/pe/{sample}--{file}.collapsed_trunc.fastq.gz"  # collapsed reads that were quality trimmed
     log:
-        "results/logs/adapterremoval/pe/{sample}.log"
+        "results/logs/adapterremoval/pe/{sample}_{file}.log"
     params:
         extra="--mm 3 --minquality 30 --trimns --minlength 25 --collapse --collapse-deterministic" # same params as NZ greyling paper
     wrapper:
@@ -52,28 +43,47 @@ rule adapterremoval_pe:
 
 # FastQC after trimming
 
-rule fastqc_post_trim:
+rule fastqc_post_trim_se:
     input:
-        lambda wildcards: (
-            f"results/02_trimmed/se/{wildcards.sample}.fastq.gz"
-            if wildcards.read_type == "se"
-            else f"results/02_trimmed/pe/{wildcards.sample}.{wildcards.collapsed_type}.fastq.gz"
-        )
+        "results/02_trimmed/se/{sample}--{file}.fastq.gz"
     output:
-        html="results/01_qc/fastqc_post_trim/{read_type}/{sample}_{collapsed_type}.html",
-        zip="results/01_qc/fastqc_post_trim/{read_type}/{sample}_{collapsed_type}.zip"
+        html="results/01_qc/fastqc_post_trim/se/{sample}--{file}.html",
+        zip="results/01_qc/fastqc_post_trim/se/{sample}--{file}.zip"
     log:
-        "logs/fastqc_post_trim/{read_type}/{sample}_{collapsed_type}.log"
+        "results/logs/fastqc_post_trim/se/{sample}--{file}.log"
+    wrapper:
+        "v7.0.0/bio/fastqc"
+
+rule fastqc_post_trim_pe:
+    input:
+        "results/02_trimmed/pe/{sample}--{file}.{collapsed_type}.fastq.gz"
+    output:
+        html="results/01_qc/fastqc_post_trim/pe/{sample}--{file}.{collapsed_type}.html",
+        zip="results/01_qc/fastqc_post_trim/pe/{sample}--{file}.{collapsed_type}.zip"
+    log:
+        "results/logs/fastqc_post_trim/pe/{sample}--{file}--{collapsed_type}.log"
     wrapper:
         "v7.0.0/bio/fastqc"
 
 # Combine all reads together, SE + collapsed PE
 
+def get_files(wildcards):
+    # Get all collapsed files for this sample
+    collapsed_files = []
+    collapsed_trunc_files = []
+    unpaired_files = []
+    for file in samples[wildcards.sample].get("paired_reads", []):
+        collapsed_files.append(f"results/02_trimmed/pe/{wildcards.sample}--{file}.collapsed.fastq.gz")
+        collapsed_trunc_files.append(f"results/02_trimmed/pe/{wildcards.sample}--{file}.collapsed_trunc.fastq.gz")
+    for file in samples[wildcards.sample].get("unpaired_reads", []):
+        unpaired_files.append(f"results/02_trimmed/se/{wildcards.sample}--{file}.fastq.gz")
+    return collapsed_files, collapsed_trunc_files, unpaired_files
+
 rule combine_reads:
     input:
-        pe_collapsed = "results/02_trimmed/pe/{sample}.collapsed.fastq.gz",
-        pe_collapsed_trunc = "results/02_trimmed/pe/{sample}.collapsed_trunc.fastq.gz",
-        se_trimmed = "results/02_trimmed/se/{sample}.fastq.gz"
+        pe_collapsed = lambda wc: get_files(wc)[0],
+        pe_collapsed_trunc = lambda wc: get_files(wc)[1],
+        se_trimmed = lambda wc: get_files(wc)[2]
     output:
         combined = "results/03_combined/{sample}.fastq.gz"
     shell:

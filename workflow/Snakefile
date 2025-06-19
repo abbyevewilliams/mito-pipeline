@@ -23,33 +23,37 @@ MAPDAMAGE_RESCALE=config["mapdamage_rescale"]
 
 def get_fastq_files():
     all_reads = []
-    for sample, paths in samples.items():
+    for sample, files in samples.items():
         # Paired reads (add _R1 and _R2)
-        for paired_base in paths.get("paired_reads", []):
-            all_reads.append(f"{paired_base}_R1.fastq.gz")
-            all_reads.append(f"{paired_base}_R2.fastq.gz")
-        # Unpaired reads (keep as is)
-        for unpaired in paths.get("unpaired_reads", []):
-            all_reads.append(unpaired)
+        for paired_base in files.get("paired_reads", []):
+            all_reads.append(f"Data/{paired_base}_R1.fastq.gz")
+            all_reads.append(f"Data/{paired_base}_R2.fastq.gz")
+        # Unpaired reads
+        for unpaired_base in files.get("unpaired_reads", []):
+            all_reads.append(f"Data/{unpaired_base}_R1.fastq.gz")
     return all_reads
 
 ALL_FASTQ_FILES = get_fastq_files()
 
 # Function for extracting names of all pairs per sample
 
-PAIRED_PAIRS = [
-    (sample, basename)
+UNPAIRED_PAIRS = [
+    (sample, files)
     for sample, data in samples.items()
-    for basename in data.get("paired_reads", [])
+    for files in data.get("unpaired_reads", [])
 ]
 
-# Function for extracting the species
-def get_species(sample):
-    return samples[sample]["species"]
+PAIRED_PAIRS = [
+    (sample, files)
+    for sample, data in samples.items()
+    for files in data.get("paired_reads", [])
+]
 
-# Checks
-print("SAMPLES:", SAMPLES)
-print("PAIRED_PAIRS:", PAIRED_PAIRS)
+# Optional checks
+#print("SAMPLES:", SAMPLES)
+#print("ALL FASTQ FILES:", ALL_FASTQ_FILES)
+#print("UNPAIRED_PAIRS:", UNPAIRED_PAIRS)
+#print("PAIRED_PAIRS:", PAIRED_PAIRS)
 
 # load rules
 # -----------------------------------------------------
@@ -80,11 +84,12 @@ onerror:
 
 rule all:
     input:
-        expand("results/01_qc/fastqc_initial/{sample_path}.html", sample_path=ALL_FASTQ_FILES),
-        expand("results/02_trimmed/se/{sample}.fastq.gz", sample=SAMPLES), # remove adapters from pe and se and trim
-        expand("results/02_trimmed/pe/{sample}_{basename}_collapsed.fastq.gz", zip, sample=[s for s, b in PAIRED_PAIRS], basename=[b for s, b in PAIRED_PAIRS]),
-        expand("results/01_qc/fastqc_post_trim/se/{sample}.html", sample=SAMPLES), # post trimming fastqc
-        expand("results/01_qc/fastqc_post_trim/pe/{sample}_{collapsed_type}.html", sample=SAMPLES, collapsed_type=["collapsed", "collapsed_trunc"]),
+        expand("results/01_qc/fastqc_initial/{sample_file}.html", sample_file=ALL_FASTQ_FILES),
+        expand("results/02_trimmed/se/{sample}--{file}.fastq.gz", sample=[s for s, p in UNPAIRED_PAIRS], file=[f for s, f in UNPAIRED_PAIRS]), # trim unpaired reads
+        expand("results/02_trimmed/pe/{sample}--{file}.collapsed.fastq.gz", zip, sample=[s for s, p in PAIRED_PAIRS], file=[f for s, f in PAIRED_PAIRS]),
+        expand("results/02_trimmed/pe/{sample}--{file}.collapsed_trunc.fastq.gz", zip, sample=[s for s, p in PAIRED_PAIRS], file=[f for s, f in PAIRED_PAIRS]),        
+        expand("results/01_qc/fastqc_post_trim/se/{sample}--{file}.html", sample=[s for s, p in UNPAIRED_PAIRS], file=[f for s, f in UNPAIRED_PAIRS]), # post trimming fastqc
+        expand("results/01_qc/fastqc_post_trim/pe/{sample}--{file}.{collapsed_type}.html", sample=[s for s, p in PAIRED_PAIRS], file=[f for s, f in PAIRED_PAIRS], collapsed_type=["collapsed", "collapsed_trunc"]),
         expand("results/03_combined/{sample}.fastq.gz",sample=SAMPLES), # combined reads (se + pe)
         expand("results/logs/bwa_index/{species}.log", species=config["reference_genomes"].keys()), # indexed ref genomes
         expand("results/05_filt/{sample}.bam.bai", sample=SAMPLES), # mapped reads

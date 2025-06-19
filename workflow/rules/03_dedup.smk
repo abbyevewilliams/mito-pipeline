@@ -2,7 +2,7 @@
 
 rule dedup:
     input:
-        "results/05_filt/{sample}.bam"
+        bam="results/05_filt/{sample}.bam"
     output:
         bam=temp("results/06_dedup/{sample}.bam")
     conda: 

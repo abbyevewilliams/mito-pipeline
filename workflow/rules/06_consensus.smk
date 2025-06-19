@@ -3,7 +3,7 @@
 
 rule angsd_consensus:
     input:
-        bam="results/07_mapdamage/{sample}.bam",
+        bam="results/07_mapdamage/{sample}/{sample}.rescaled.bam",
         ref=lambda wildcards: config["reference_genomes"][samples[wildcards.sample]["species"]]
     output:
         fasta="results/09_consensus/{sample}.fa"
