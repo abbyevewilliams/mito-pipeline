@@ -7,4 +7,4 @@ dependencies:
   - python=3.11
   - snakemake
   - snakemake-executor-plugin-slurm
-  - conda
+  - conda>24.7.1

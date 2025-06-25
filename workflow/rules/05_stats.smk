@@ -7,9 +7,6 @@ rule samtools_depth:
         "results/08_stats/{sample}.depth"
     log:
         "results/logs/samtools_depth/{sample}.log"
-    threads: 4
-    resources:
-        mem="32GB"
     wrapper:
         "v5.8.0/bio/samtools/depth"
 
@@ -27,35 +24,22 @@ rule samtools_stats:
 #Summarise key stats across all samples
 rule summarise_samtools_stats:
     input:
-        stats_files=expand(
-            "results/07_mapdamage/{sample}/{sample}.rescaled.bam",
-            sample=SAMPLES
-        ) if MAPDAMAGE_RESCALE else expand(
-            "results/06_dedup/{sample}.stats",
-            sample=SAMPLES
-        )
+        stats_files=expand("results/08_stats/{sample}.stats", sample=SAMPLES)
     output:
         "results/08_stats/mapping_summary.txt"
     shell:
-        r'''
+        """
         echo -e "Sample\tTotal_Reads\tMapped_Reads\tPercent_Mapped\tError_Rate\tAvg_Quality" > {output}
         for stats_file in {input.stats_files}; do
-            sample=$(basename "$stats_file")
-            sample=${{sample%%.*}}  # remove extension after first dot
-            
-            # Try to get stats only if file exists
-            if [[ -f "$stats_file" ]]; then
-                total_reads=$(grep "raw total sequences:" "$stats_file" | awk '{{print $NF}}')
-                mapped_reads=$(grep "reads mapped:" "$stats_file" | head -n 1 | awk '{{print $NF}}')
-                error_rate=$(grep "error rate:" "$stats_file" | awk '{{print $NF}}')
-                avg_quality=$(grep "average quality:" "$stats_file" | awk '{{print $NF}}')
-                percent_mapped=$(awk -v mapped="$mapped_reads" -v total="$total_reads" 'BEGIN {{ if (total>0) print (mapped/total)*100; else print 0 }}')
-                echo -e "$sample\t$total_reads\t$mapped_reads\t$percent_mapped\t$error_rate\t$avg_quality" >> {output}
-            else
-                echo -e "$sample\tNA\tNA\tNA\tNA\tNA" >> {output}
-            fi
+            sample=$(basename "$stats_file" .stats)
+            total_reads=$(grep "raw total sequences:" "$stats_file" | cut -f 3)
+            mapped_reads=$(grep "reads mapped:" "$stats_file" | head -n 1 | cut -f 3)
+            error_rate=$(grep "error rate:" "$stats_file" | cut -f 3)
+            avg_quality=$(grep "average quality:" "$stats_file" | cut -f 3)
+            percent_mapped=$(awk -v mapped="$mapped_reads" -v total="$total_reads" 'BEGIN {{ if (total>0) print (mapped/total)*100; else print 0 }}')
+            echo -e "$sample\t$total_reads\t$mapped_reads\t$percent_mapped\t$error_rate\t$avg_quality" >> {output}
         done
-        '''
+        """
 
 # Calculate average depth for each sample
 rule compute_average_depth:

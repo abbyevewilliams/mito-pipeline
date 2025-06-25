@@ -2,7 +2,7 @@
 
 rule fastqc_initial:
     input:
-        "{sample_file}"
+        lambda wc: FASTQ_PATHS[wc.sample_file]
     output:
         html="results/01_qc/fastqc_initial/{sample_file}.html",
         zip="results/01_qc/fastqc_initial/{sample_file}.zip"
@@ -15,10 +15,11 @@ rule fastqc_initial:
 
 rule adapterremoval_se:
     input:
-        sample=lambda wc: f"Data/{wc.file}_R1.fastq.gz"
+        sample=lambda wc: [f"Data/{wc.file}_R1.fastq.gz"]
     output:
-        fq="results/02_trimmed/se/{sample}--{file}.fastq.gz",                               # trimmed reads
-        discarded="results/02_trimmed/se/{sample}--{file}.discarded.fastq.gz"              # reads that did not pass filters
+        fq="results/02_trimmed/se/{sample}--{file}.fastq.gz",                              # trimmed reads
+        discarded="results/02_trimmed/se/{sample}--{file}.discarded.fastq.gz",             # discarded reads
+        settings="results/02_trimmed/se/{sample}--{file}.settings"                         # settings
     log:
         "results/logs/adapterremoval/se/{sample}--{file}.log"
     params:
@@ -32,8 +33,12 @@ rule adapterremoval_pe:
     input:
         sample=lambda wc: [f"Data/{wc.file}_R1.fastq.gz", f"Data/{wc.file}_R2.fastq.gz"]
     output:
+        fq1="results/02_trimmed/pe/{sample}--{file}_R1.fastq.gz",
+        fq2="results/02_trimmed/pe/{sample}--{file}_R2.fastq.gz",
         collapsed="results/02_trimmed/pe/{sample}--{file}.collapsed.fastq.gz",              # overlapping mate-pairs which have been merged into a single read
-        collapsed_trunc="results/02_trimmed/pe/{sample}--{file}.collapsed_trunc.fastq.gz"  # collapsed reads that were quality trimmed
+        collapsed_trunc="results/02_trimmed/pe/{sample}--{file}.collapsed_trunc.fastq.gz",  # collapsed reads that were quality trimmed
+        discarded="results/02_trimmed/pe/{sample}--{file}.discarded.fastq.gz",             # discarded reads
+        settings="results/02_trimmed/pe/{sample}--{file}.settings"                         # settings
     log:
         "results/logs/adapterremoval/pe/{sample}_{file}.log"
     params:
